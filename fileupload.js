@@ -2,7 +2,6 @@ const fs = require("fs");
 const path = require("path");
 const dotenv = require("dotenv");
 const axios = require("axios");
-const { getDocument } = require("pdfjs-dist/legacy/build/pdf.mjs");
 const mammoth = require("mammoth");
 const { embedText } = require("./embed");
 const pinecone = require("@pinecone-database/pinecone");
@@ -14,6 +13,8 @@ const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/
 
 async function extractTextFromPDF(pdfPath) {
     try {
+        const { getDocument } = await import("pdfjs-dist/legacy/build/pdf.mjs");
+
         if (!fs.existsSync(pdfPath)) {
             return { success: false, error: `File not found: ${pdfPath}` };
         }
@@ -34,6 +35,7 @@ async function extractTextFromPDF(pdfPath) {
         return { success: false, error: `Error extracting text from PDF: ${error.message}` };
     }
 }
+
 
 async function extractTextFromDOCX(docxPath) {
     try {
