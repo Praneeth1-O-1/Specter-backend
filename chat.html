@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chatbot</title>
+    <style>
+        #chat-history {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: scroll;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-history"></div>
+    <input type="text" id="user-input">
+    <button id="send-button">Send</button>
+
+    <script>
+        const chatHistory = document.getElementById('chat-history');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+
+        sendButton.addEventListener('click', () => {
+            const message = userInput.value.trim();
+            if (message) {
+                fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: message }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        chatHistory.innerHTML += `<p><strong>User:</strong> ${message}</p>`;
+                        chatHistory.innerHTML += `<p><strong>Bot:</strong> ${data.response}</p>`;
+                    } else {
+                        chatHistory.innerHTML += `<p style="color:red;"><strong>Error:</strong> ${data.error}</p>`;
+                    }
+                    userInput.value = '';
+                    chatHistory.scrollTop = chatHistory.scrollHeight; // Auto-scroll to the bottom
+                })
+                .catch(error => {
+                    chatHistory.innerHTML += `<p style="color:red;"><strong>Error:</strong> ${error.message}</p>`;
+                });
+            }
+        });
+
+        // Fetch chat history on page load
+        fetch('/chat/history')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    data.history.forEach(message => {
+                        chatHistory.innerHTML += `<p><strong>${message.role}:</strong> ${message.content}</p>`;
+                    });
+                    chatHistory.scrollTop = chatHistory.scrollHeight; // Auto-scroll to bottom
+                } else {
+                    chatHistory.innerHTML += `<p style="color:red;"><strong>Error:</strong> ${data.error}</p>`;
+                }
+            })
+            .catch(error => {
+                chatHistory.innerHTML += `<p style="color:red;"><strong>Error:</strong> ${error.message}</p>`;
+            });
+
+    </script>
+</body>
+</html>

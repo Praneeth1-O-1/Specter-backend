@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gemini Response Viewer</title>
+    <style>
+        body { font-family: sans-serif; }
+        #queryInput { width: 80%; padding: 10px; margin-bottom: 10px; }
+        #responseDiv { border: 1px solid #ccc; padding: 10px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Gemini Response Viewer</h1>
+
+    <input type="text" id="queryInput" placeholder="Enter your query">
+    <button id="sendButton">Send Query</button>
+
+    <div id="responseDiv">
+        </div>
+
+    <script>
+        document.getElementById("sendButton").addEventListener("click", async () => {
+            const query = document.getElementById("queryInput").value;
+            if (!query) return;
+
+            try {
+                const response = await fetch("http://localhost:5000/process-query", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ query: query }),
+                });
+
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+
+                const data = await response.json();
+                document.getElementById("responseDiv").textContent = data.response;
+            } catch (error) {
+                console.error("Error:", error);
+                document.getElementById("responseDiv").textContent = "Error fetching response.";
+            }
+        });
+    </script>
+</body>
+</html>
