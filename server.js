@@ -17,7 +17,7 @@ const { embedAndUpsertChunks } = require("./embed");
 require("dotenv").config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
 
 // --- Global AI Model Initialization (for efficiency) ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -37,7 +37,7 @@ const pinecone = new Pinecone({
 // In production, ensure this is locked down to your domain.
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://your-frontend-domain.com"], // Add your actual frontend domains
+    origin: ["http://localhost:3000", "specter-frontend-five.vercel.app"], // Add your actual frontend domains
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true, // If your frontend needs to send cookies/sessions
   })
@@ -371,7 +371,7 @@ app.post("/chat", async (req, res) => {
     Strictly adhere to the following JSON format: {"response": "bot response here"}`;
 
     const geminiResponse = await queryModel.generateContent(prompt);
-    const geminiText = geminiResponse.response.text();
+    const geminiText = await geminiResponse.response.text();
 
     console.log("Raw Gemini Response (chat):", geminiText);
 

@@ -3,67 +3,174 @@
 <head>
     <title>Chatbot</title>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        #chat-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 40px); /* Adjust to viewport height */
+        }
         #chat-history {
-            border: 1px solid #ccc;
+            flex-grow: 1; /* Allows history to take available space */
+            border-bottom: 1px solid #eee;
+            padding: 15px;
+            overflow-y: auto; /* Changed to auto for better UX */
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 5px;
+            word-wrap: break-word; /* Prevents long words from breaking layout */
+        }
+        .user-message {
+            background-color: #e0f7fa; /* Light blue */
+            text-align: right;
+            margin-left: 20%; /* Keep messages from taking full width */
+        }
+        .bot-message {
+            background-color: #f0f0f0; /* Light grey */
+            text-align: left;
+            margin-right: 20%; /* Keep messages from taking full width */
+        }
+        #input-area {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid #eee;
+        }
+        #user-input {
+            flex-grow: 1;
             padding: 10px;
-            height: 300px;
-            overflow-y: scroll;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        #send-button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #send-button:hover {
+            background-color: #0056b3;
+        }
+        .error-message {
+            color: red;
+            background-color: #ffe0e0;
+            padding: 8px;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
-    <div id="chat-history"></div>
-    <input type="text" id="user-input">
-    <button id="send-button">Send</button>
+    <div id="chat-container">
+        <div id="chat-history"></div>
+        <div id="input-area">
+            <input type="text" id="user-input" placeholder="Type your message...">
+            <button id="send-button">Send</button>
+        </div>
+    </div>
 
     <script>
         const chatHistory = document.getElementById('chat-history');
         const userInput = document.getElementById('user-input');
         const sendButton = document.getElementById('send-button');
 
-        sendButton.addEventListener('click', () => {
+        // Function to display a message
+        function displayMessage(role, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            if (role === 'user') {
+                messageDiv.classList.add('user-message');
+                messageDiv.innerHTML = `<strong>User:</strong> ${content}`;
+            } else if (role === 'bot') {
+                messageDiv.classList.add('bot-message');
+                messageDiv.innerHTML = `<strong>Bot:</strong> ${content}`;
+            } else if (role === 'error') {
+                messageDiv.classList.add('error-message');
+                messageDiv.innerHTML = `<strong>Error:</strong> ${content}`;
+            }
+            chatHistory.appendChild(messageDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight; // Auto-scroll to the bottom
+        }
+
+        // Function to send message
+        async function sendMessage() {
             const message = userInput.value.trim();
-            if (message) {
-                fetch('/chat', {
+            if (!message) return; // Don't send empty messages
+
+            displayMessage('user', message); // Display user's message immediately
+            userInput.value = ''; // Clear input
+
+            try {
+                const response = await fetch('/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ text: message }),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        chatHistory.innerHTML += `<p><strong>User:</strong> ${message}</p>`;
-                        chatHistory.innerHTML += `<p><strong>Bot:</strong> ${data.response}</p>`;
-                    } else {
-                        chatHistory.innerHTML += `<p style="color:red;"><strong>Error:</strong> ${data.error}</p>`;
-                    }
-                    userInput.value = '';
-                    chatHistory.scrollTop = chatHistory.scrollHeight; // Auto-scroll to the bottom
-                })
-                .catch(error => {
-                    chatHistory.innerHTML += `<p style="color:red;"><strong>Error:</strong> ${error.message}</p>`;
                 });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // CRITICAL FIX: Access data.response.response to get the actual text
+                    const botResponseText = data.response.response;
+                    displayMessage('bot', botResponseText);
+                } else {
+                    displayMessage('error', data.error || 'Unknown error occurred.');
+                }
+            } catch (error) {
+                console.error("Fetch error:", error);
+                displayMessage('error', `Could not connect to server or parse response: ${error.message}`);
+            }
+        }
+
+        // Event listener for Send button
+        sendButton.addEventListener('click', sendMessage);
+
+        // Event listener for Enter key in input field
+        userInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                sendMessage();
             }
         });
 
         // Fetch chat history on page load
-        fetch('/chat/history')
-            .then(response => response.json())
-            .then(data => {
+        async function fetchChatHistory() {
+            try {
+                const response = await fetch('/chat/history');
+                const data = await response.json();
+
                 if (data.success) {
                     data.history.forEach(message => {
-                        chatHistory.innerHTML += `<p><strong>${message.role}:</strong> ${message.content}</p>`;
+                        // FIX: Assuming message.content for bot will be the text directly from backend history.
+                        // Ensure your backend history storage for bot messages is just text.
+                        displayMessage(message.role, message.content);
                     });
-                    chatHistory.scrollTop = chatHistory.scrollHeight; // Auto-scroll to bottom
                 } else {
-                    chatHistory.innerHTML += `<p style="color:red;"><strong>Error:</strong> ${data.error}</p>`;
+                    displayMessage('error', data.error || 'Failed to load chat history.');
                 }
-            })
-            .catch(error => {
-                chatHistory.innerHTML += `<p style="color:red;"><strong>Error:</strong> ${error.message}</p>`;
-            });
+            } catch (error) {
+                console.error("Fetch history error:", error);
+                displayMessage('error', `Could not load chat history: ${error.message}`);
+            }
+        }
+
+        // Call fetch history when the page loads
+        fetchChatHistory();
 
     </script>
 </body>
