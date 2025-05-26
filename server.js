@@ -27,9 +27,6 @@ const queryModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 // --- Pinecone Initialization ---
 const pinecone = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
-    environment: process.env.PINECONE_ENV    
-  // Add environment property if your Pinecone setup requires it
-  // environment: process.env.PINECONE_ENVIRONMENT,
 });
 
 // --- Middleware ---
