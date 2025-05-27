@@ -17,6 +17,13 @@ const { embedAndUpsertChunks } = require("./embed");
 require("dotenv").config();
 
 const app = express();
+
+app.use(cors({
+    origin: "https://specter-frontend-nine.vercel.app", // your Vercel frontend URL
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
+}));
+
 const PORT = process.env.PORT || 8080;
 
 // --- Global AI Model Initialization (for efficiency) ---
