@@ -19,7 +19,7 @@ require("dotenv").config();
 const app = express();
 
 app.use(cors({
-    origin: "https://specter-frontend-nine.vercel.app", // your Vercel frontend URL
+    origin: "https://specter-frontend-murex.vercel.app", // your Vercel frontend URL
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
 }));
